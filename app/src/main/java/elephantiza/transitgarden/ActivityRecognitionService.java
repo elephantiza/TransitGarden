@@ -26,9 +26,7 @@ public class ActivityRecognitionService extends IntentService  {
     }
 
     private String getType(int type){
-        if(type == DetectedActivity.UNKNOWN)
-            return "Unknown";
-        else if(type == DetectedActivity.IN_VEHICLE)
+        if(type == DetectedActivity.IN_VEHICLE)
             return "In Vehicle";
         else if(type == DetectedActivity.ON_BICYCLE)
             return "On Bicycle";
@@ -36,10 +34,8 @@ public class ActivityRecognitionService extends IntentService  {
             return "On Foot";
         else if(type == DetectedActivity.STILL)
             return "Still";
-        else if(type == DetectedActivity.TILTING)
-            return "Tilting";
         else
-            return "";
+            return "Still";
     }
 
 }

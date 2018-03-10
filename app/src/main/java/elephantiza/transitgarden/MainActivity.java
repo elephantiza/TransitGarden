@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
     public int score;
     public long lastStillTime;
+    public String previousActivity;
     public boolean stillInVehicle = false;
     private ActivityRecognitionClient arclient;
     private PendingIntent pIntent;
@@ -70,12 +72,16 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        lastStillTime = 0;
+        lastStillTime = System.currentTimeMillis();
         stillInVehicleView = (TextView) findViewById(R.id.stillInVehicle);
         scoreView = (TextView) findViewById(R.id.score);
-        scoreView.setText("0 Points");
-        stillInVehicleView.setText("NOT In Vehicle");
 
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        score = sharedPref.getInt("score", 0);
+
+        scoreView.setText(Integer.toString(score) + " Points");
+        stillInVehicleView.setText("NOT In Vehicle");
+        previousActivity = "Still";
         mLocationButton = (Button) findViewById(R.id.button_location);
         mLocationTextView = (TextView) findViewById(R.id.textview_location);
 
@@ -147,9 +153,11 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                 if (intent.getStringExtra("Activity").equals("On Foot")) {
                     stillInVehicle = true;
                     stillInVehicleView.setText("In Vehicle");
+                    previousActivity = "On Foot";
                     //startTrackingLocation();
-                } else if(stillInVehicle && !intent.getStringExtra("Activity").equals("On Foot")){
+                } else if(stillInVehicle && !intent.getStringExtra("Activity").equals("On Foot") && !intent.getStringExtra("Activity").equals(previousActivity)){
                     try {
+                        previousActivity = intent.getStringExtra("Activity");
                         Task<PlaceLikelihoodBufferResponse> placeResult = pdClient.getCurrentPlace(null);
 
                         placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
@@ -198,12 +206,6 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                                                 scoreView.setText(Integer.toString(score));
                                                 Toast.makeText(getApplicationContext(), "Point of Interest", Toast.LENGTH_SHORT).show();
                                                 break;
-                                            case 34:
-                                                score = score + 1000;
-                                                lastStillTime = System.currentTimeMillis();
-                                                scoreView.setText(Integer.toString(score));
-                                                Toast.makeText(getApplicationContext(), "Point of Interest", Toast.LENGTH_SHORT).show();
-                                                break;
                                         }
                                         scoreView.setText(Integer.toString(score));
                                     }
@@ -225,6 +227,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
                 }
                 if (System.currentTimeMillis() - lastStillTime > 5*60*1000 && !intent.getStringExtra("Activity").equals("On Foot"))
                 {
+                    previousActivity = intent.getStringExtra("Activity");
                     stillInVehicle = false;
                     stillInVehicleView.setText("NOT In Vehicle");
                 }
@@ -342,6 +345,11 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 
     @Override
     protected void onDestroy() {
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt("score", score);
+        editor.commit();
+
         super.onDestroy();
         if (arclient != null) {
             arclient.removeActivityUpdates(pIntent);
