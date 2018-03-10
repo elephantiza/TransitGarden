@@ -21,6 +21,9 @@
         </activity>
         <service android:name="ActivityRecognitionService"/>
         <service android:name="LocationService" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDW_clUSs7u01org-szuVZViCOISxdGtik"/>
     </application>
 
 </manifest>
